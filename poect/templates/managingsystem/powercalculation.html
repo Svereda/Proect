@@ -1,0 +1,112 @@
+{% extends 'managingsystem/base.html' %}
+{% load static %}
+
+{% block links %}
+    <link rel="stylesheet" href="{% static 'managingsystem/css/powercalc.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block body %}
+    <main class="content">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Бренд</th>
+                        <th>Прилад</th>
+                        <th>Потужність</th>
+                        <th>Кількість</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>{{ item.brand_name }}</td>
+                            <td>{{ item.product_name }}</td>
+                            <td>{{ item.power }}</td>
+                            <td>{{ item.quantity }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">Записи відсутні</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+    <aside class="form-container">
+    <form method="post" action="{% url 'power_calculation' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="brand">Бренд:</label>
+            <select id="brand" name="brand_name" onchange="updateProducts()">
+                <option value="">Виберіть...</option>
+                {% for brand in brands %}
+                    <option value="{{ brand }}">{{ brand }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="product-name">Прилад:</label>
+            <select id="product-name" name="product_name">
+                <option value="">Виберіть...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="quantity">Кількість:</label>
+            <input type="number" id="quantity" name="quantity" value="0" min="0" max="100">
+        </div>
+        <button type="submit" class="add-to-cart">Додати</button>
+    </form>
+    <div class="total">
+        <span>Загальна потужність: </span><span class="total-value">{{ total_power }}</span>
+    </div>
+    <form method="post" action="{% url 'add_to_dashboard' %}" id="powerForm">
+        {% csrf_token %}
+        <input type="hidden" name="total_power" value="{{ total_power }}">
+        <button type="submit" class="add-to-dashboard" onclick="onAddToDashboard()">Додати до дашборду</button>
+    </form>
+
+</aside>
+
+<script>
+    const appliances = {{ appliances_json|safe }};
+
+    function updateProducts() {
+        const brandSelect = document.getElementById('brand');
+        const productSelect = document.getElementById('product-name');
+        const selectedBrand = brandSelect.value;
+
+        // Clear current options
+        productSelect.innerHTML = '<option value="">Виберіть...</option>';
+
+        // Populate products based on selected brand
+        appliances.forEach(appliance => {
+            if (appliance.brand_name === selectedBrand) {
+                const option = document.createElement('option');
+                option.value = appliance.product_name;
+                option.textContent = appliance.product_name;
+                productSelect.appendChild(option);
+            }
+        });
+    }
+
+    function clearTable() {
+        const tableBody = document.querySelector('.table-container tbody');
+        tableBody.innerHTML = ''; // Очищає вміст таблиці
+    }
+
+    // Функція для очищення таблиці і скидання форми
+    function onAddToDashboard() {
+        // Очищаємо таблицю
+        clearTable();
+
+        // Можна також скинути інші елементи, якщо потрібно
+        document.getElementById('brand').value = '';
+        document.getElementById('product-name').innerHTML = '<option value="">Виберіть...</option>';
+        document.getElementById('quantity').value = 0;
+    }
+
+</script>
+{% endblock %}
